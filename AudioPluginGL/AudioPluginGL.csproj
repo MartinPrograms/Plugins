@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows</TargetFramework>
+        <RootNamespace>AudioPluginGL</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+<UseWPF>true</UseWPF>
+<UseWindowsForms>false</UseWindowsForms>
+<AssemblyName>AudioPluginGL</AssemblyName>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="AudioPlugSharp" Version="0.6.3" />
+      <PackageReference Include="AudioPlugSharpHost" Version="0.6.3" />
+      <PackageReference Include="ImGui.NET" Version="1.91.0.1" />
+      <PackageReference Include="Silk.NET.Core" Version="2.21.0" />
+      <PackageReference Include="Silk.NET.Input" Version="2.21.0" />
+      <PackageReference Include="Silk.NET.Input.Common" Version="2.21.0" />
+      <PackageReference Include="Silk.NET.Input.Extensions" Version="2.21.0" />
+      <PackageReference Include="Silk.NET.OpenGL" Version="2.21.0" />
+      <PackageReference Include="StupidSimpleLogger" Version="1.0.8" />
+      <PackageReference Include="System.Runtime.InteropServices.WindowsRuntime" Version="4.3.0" />
+    </ItemGroup>
+
+</Project>
