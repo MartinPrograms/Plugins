@@ -60,7 +60,7 @@ public class StereoVibrato : StereoAudioUnit
             changed |= ImGui.SliderFloat("Rate##" + GetHashCode(), ref _rate, 0.2f, 20.0f);
             if (changed)
             {
-                _lfo = new LFO(_rate, _depth / 100, 0, LFOShape.Sine, 0, Plugin.Instance.BPM, Plugin.Instance.SampleRate);
+                _lfo = new LFO(AudioSample.HzToSeconds(_rate), _depth / 100, 0, LFOShape.Sine, 0, Plugin.Instance.BPM, Plugin.Instance.SampleRate);
                 
                 LeftVibrato.Lfo = _lfo.Clone() as LFO;
                 RightVibrato.Lfo = _lfo.Clone() as LFO;
