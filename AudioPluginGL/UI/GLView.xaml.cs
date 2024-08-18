@@ -1,10 +1,12 @@
-﻿using System.Numerics;
+﻿using System.IO;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using AudioPluginGL.UI;
-using ImGuiNET;
+using Hexa.NET.ImGui;
+using Hexa.NET.ImPlot;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
@@ -20,8 +22,23 @@ public partial class GLView : UserControl
 
         Host.Loaded += (sender, args) =>
         {
-            _guiController = new ImGuiController(Host.Gl);
+            _guiController = new ImGuiController(Host.Gl, () =>
+            {
+                var io = ImGui.GetIO();
+                if (File.Exists("C:\\Windows\\Fonts\\Bahnschrift.ttf"))
+                    io.Fonts.AddFontFromFileTTF("C:\\Windows\\Fonts\\Bahnschrift.ttf", 14);
+                else
+                {
+                    io.Fonts.AddFontDefault();
+                    Console.WriteLine("Font not found, using default font.");
+                }
+            });
             _loaded = true;
+            
+            ImPlot.SetImGuiContext(_guiController.Context);
+            var plotContext = ImPlot.CreateContext();
+            ImPlot.SetCurrentContext(plotContext);
+            ImPlot.StyleColorsDark(ImPlot.GetStyle());
         };
     }
 

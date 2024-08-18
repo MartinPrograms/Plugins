@@ -1,8 +1,10 @@
 ﻿using System.Runtime.InteropServices;
+using AudioPluginGL.MathHelpers;
 using AudioPluginGL.UI;
 using AudioPlugSharp;
 using AudioPlugSharpHost;
-using ImGuiNET;
+using Hexa.NET.ImGui;
+using Reverb.AudioEffectsTIA.AudioUnits;
 using Reverb.Reverberator;
 using Logger = StupidSimpleLogger.Logger;
 namespace Reverb;
@@ -11,12 +13,15 @@ public class Plugin : AudioPluginOpenGL
 {
     public int SampleRate;
     public static Plugin Instance;
+    public float BPM;
+
+    public int CurrentDelay { get; private set; } // This will be returned to the DAW, so it can adjust the delay time. Otherwise, it introduces latency
     
     public Plugin()
     {
-        Company = "MARTIN!";
-        Website = "martiiin.net";
-        Contact = "no@no.com";
+        Company = "Martin";
+        Website = "https://martiiin.net";
+        Contact = "martin@martiiin.net";
         PluginName = "Reverberator";
         PluginCategory = "Fx";
         PluginVersion = "1.0.0";
@@ -25,14 +30,14 @@ public class Plugin : AudioPluginOpenGL
         PluginID = 0xA57745596BFC6EF8;
 
         HasUserInterface = true;
-        EditorWidth = 400;
-        EditorHeight = 350;
+        EditorWidth = 800;
+        EditorHeight = 450;
     }
 
     private AudioIOPort stereoInput;
     private AudioIOPort stereoOutput;
 
-    private StereoDelay _reverb;
+    private List<StereoAudioUnit> _audioUnits = new List<StereoAudioUnit>();
 
     private DelaySettings _settings = new DelaySettings();
     
@@ -49,10 +54,19 @@ public class Plugin : AudioPluginOpenGL
             SampleRate = 44100; // nasty bug workaround :(
         }
         Console.WriteLine("Sample rate: " + SampleRate);
+
+        BPM = (float)Host.BPM;
+        Console.WriteLine("BPM: " + BPM);
+        if (BPM == 0)
+        {
+            BPM = 120; // nasty bug workaround :(
+        }
         
         InputPorts = new AudioIOPort[] { stereoInput = new AudioIOPort("Stereo Input", EAudioChannelConfiguration.Stereo) };
         OutputPorts = new AudioIOPort[] { stereoOutput = new AudioIOPort("Stereo Output", EAudioChannelConfiguration.Stereo) };
-        _reverb = new StereoDelay(_settings);
+        
+        //_audioUnits.Add(new StereoDelay(_settings));
+        _audioUnits.Add(new StereoVibrato());
     }
 
     private double[] _debugSamples = new double[64];
@@ -61,6 +75,18 @@ public class Plugin : AudioPluginOpenGL
     public override void Process()
     {
         base.Process();
+        BPM = (float)Host.BPM;
+        SampleRate = (int)Host.SampleRate;
+        
+        if (SampleRate == 0)
+        {
+            SampleRate = 44100; // nasty bug workaround :(
+        }
+        
+        if (BPM == 0)
+        {
+            BPM = 120; // nasty bug workaround :(
+        }
         
         ReadOnlySpan<double> inSamplesR = stereoInput.GetAudioBuffer(1);
         ReadOnlySpan<double> inSamplesL = stereoInput.GetAudioBuffer(0);
@@ -81,8 +107,13 @@ public class Plugin : AudioPluginOpenGL
                 samples[0] = (inSamplesL[i]);
                 samples[1] = (inSamplesR[i]);
                 
-                samples = _reverb.ProcessStereoSample(samples);
-                
+                // Process the samples
+                foreach (var audioUnit in _audioUnits)
+                {
+                    samples = audioUnit.ProcessStereoSample(samples);
+
+                }
+
                 outLeftSamples[i] = samples[0];
                 outRightSamples[i] = samples[1];
             }
@@ -110,36 +141,22 @@ public class Plugin : AudioPluginOpenGL
                 Console.Write(sample);
             }
             Console.WriteLine();
+            
+            Console.WriteLine("BPM: " + BPM);
+            Console.WriteLine("Sample rate: " + SampleRate);
+            
+            Console.WriteLine("Audio units:");
+            foreach (var audioUnit in _audioUnits)
+            {
+                Console.WriteLine(audioUnit.Name);
+            }
         }
         
         ImGui.Separator();
         
-        ImGui.Text("Settings");
-        ImGui.DragFloat("Delay", ref _settings.Delay, 0.01f, 0.01f, 10f);
-        ImGui.DragFloat("Feedback", ref _settings.Feedback, 0.01f, 0.01f, 1.0f);
-        
-        ImGui.DragFloat("High Pass Frequency", ref _settings.HighPassFrequency, 50f, 20f, 20000f);
-        ImGui.DragFloat("Low Pass Frequency", ref _settings.LowPassFrequency, 50f, 20f, 20000f);
-        
-        ImGui.DragFloat("High Damping", ref _settings.HighDamping, 0.01f, 0.01f, 1.0f);
-        ImGui.DragFloat("Low Damping", ref _settings.LowDamping, 0.01f, 0.01f, 1.0f);
-        
-        ImGui.DragFloat("Wet Level", ref _settings.WetLevel, 0.01f, 0.01f, 1.0f);
-        ImGui.DragFloat("Dry Level", ref _settings.DryLevel, 0.01f, 0.01f, 1.0f);
-
-        if (ImGui.Button("Apply Settings Right"))
+        foreach (var audioUnit in _audioUnits)
         {
-            _reverb.RightReverb = new Delay(_settings);
-        }
-        ImGui.SameLine(); 
-        if (ImGui.Button("Apply Settings Left"))
-        {
-            _reverb.LeftReverb = new Delay(_settings);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Apply Settings Both"))
-        {
-            _reverb = new StereoDelay(_settings);
+            audioUnit.DrawUserInterface();
         }
     }
 

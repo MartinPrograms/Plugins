@@ -1,4 +1,6 @@
-﻿namespace AudioPluginGL.MathHelpers;
+﻿using AudioPluginGL.UI;
+
+namespace AudioPluginGL.MathHelpers;
 
 public static class AudioSample
 {
@@ -30,5 +32,52 @@ public static class AudioSample
     public static float SamplesToSeconds(int samples, int sampleRate)
     {
         return (float) samples / sampleRate;
+    }
+
+    public static float SnapToRythm(float seconds, SnapTo snap, float bpm, int sampleRate)
+    {
+        float beatsPerSecond = bpm / 60;
+        float secondsPerBeat = 1 / beatsPerSecond;
+        float samplesPerBeat = secondsPerBeat * sampleRate;
+        float samplesPerSnap = samplesPerBeat / (int) snap;
+        float samples = seconds * sampleRate;
+        float snappedSamples = (int) (samples / samplesPerSnap) * samplesPerSnap;
+        return snappedSamples / sampleRate;
+    }
+    
+    public static float SnapToMS(SnapTo snap, float bpm)
+    {
+        // Converts a snap value to milliseconds, for example 1/4 note at 120 BPM 
+        float beatsPerSecond = bpm / 60;
+        float secondsPerBeat = 1 / beatsPerSecond;
+        float msPerBeat = secondsPerBeat * 1000;
+        return msPerBeat / (int) snap;
+    }
+    
+    public static float SnapToSeconds(SnapTo snap, float bpm)
+    {
+        // Converts a snap value to seconds, for example 1/4 note at 120 BPM 
+        float beatsPerSecond = bpm / 60;
+        float secondsPerBeat = 1 / beatsPerSecond;
+        return secondsPerBeat / (int) snap;
+    }
+    
+    public static float SnapToSamples(SnapTo snap, float bpm, int sampleRate)
+    {
+        // Converts a snap value to samples, for example 1/4 note at 120 BPM 
+        float beatsPerSecond = bpm / 60;
+        float secondsPerBeat = 1 / beatsPerSecond;
+        float samplesPerBeat = secondsPerBeat * sampleRate;
+        return samplesPerBeat / (int) snap;
+    }
+
+    public static float SecondsToHz(float seconds)
+    {
+        return 1.0f / seconds;
+    }
+
+    public static float HzToSeconds(float hz)
+    {
+        return 1.0f / hz;
     }
 }

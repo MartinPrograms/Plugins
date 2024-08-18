@@ -3,11 +3,13 @@
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
+using System.IO;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using AudioPluginGL.UI;
-using ImGuiNET;
+using Hexa.NET.ImGui;
 using Silk.NET.Input;
 using Silk.NET.Input.Extensions;
 using Silk.NET.Maths;
@@ -41,7 +43,7 @@ namespace AudioPluginGL.UI;
         private int _windowWidth;
         private int _windowHeight;
 
-        public IntPtr Context;
+        public ImGuiContextPtr Context;
 
         /// <summary>
         /// Constructs a new ImGuiController.
@@ -71,14 +73,10 @@ namespace AudioPluginGL.UI;
         {
             Init(gl);
 
-            var io = ImGuiNET.ImGui.GetIO();
-            if (imGuiFontConfig is not null)
-            {
-                var glyphRange = imGuiFontConfig.Value.GetGlyphRange?.Invoke(io) ?? default;
-
-                io.Fonts.AddFontFromFileTTF(imGuiFontConfig.Value.FontPath, imGuiFontConfig.Value.FontSize, null, glyphRange);
-            }
-
+            var io = ImGui.GetIO();
+            io.BackendFlags |= ImGuiBackendFlags.HasMouseCursors;
+            io.BackendFlags |= ImGuiBackendFlags.HasSetMousePos;
+            
             onConfigureIO?.Invoke();
 
             io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
@@ -92,7 +90,7 @@ namespace AudioPluginGL.UI;
 
         public void MakeCurrent()
         {
-            ImGuiNET.ImGui.SetCurrentContext(Context);
+            ImGui.SetCurrentContext(Context);
         }
 
         private void Init(GL gl)
@@ -100,15 +98,18 @@ namespace AudioPluginGL.UI;
             _gl = gl;
             _windowWidth = (int)EditorWindow.Instance.RenderSize.Width;
             _windowHeight = (int)EditorWindow.Instance.RenderSize.Height;
-
-            Context = ImGuiNET.ImGui.CreateContext();
-            ImGuiNET.ImGui.SetCurrentContext(Context);
-            ImGuiNET.ImGui.StyleColorsDark();
+            
+            // load the cimgui.dll
+            Context = ImGui.CreateContext();
+            
+            ImGui.SetCurrentContext(Context);
+            
+            ImGui.StyleColorsDark();
         }
 
         private void BeginFrame()
         {
-            ImGuiNET.ImGui.NewFrame();
+            ImGui.NewFrame();
             _frameBegun = true;
 
             EditorWindow.Instance.Resize += WindowResized;
@@ -137,7 +138,7 @@ namespace AudioPluginGL.UI;
         /// <param name="down">True if the event is a key down event, otherwise False</param>
         private static void OnKeyEvent( Key keycode, int scancode, bool down)
         {
-            var io = ImGuiNET.ImGui.GetIO();
+            var io = ImGui.GetIO();
             var imGuiKey = TranslateInputKeyToImGuiKey(keycode);
             io.AddKeyEvent(imGuiKey, down);
             io.SetKeyEventNativeData(imGuiKey, (int) keycode, scancode);
@@ -164,20 +165,20 @@ namespace AudioPluginGL.UI;
         {
             if (_frameBegun)
             {
-                var oldCtx = ImGuiNET.ImGui.GetCurrentContext();
+                var oldCtx = ImGui.GetCurrentContext();
 
                 if (oldCtx != Context)
                 {
-                    ImGuiNET.ImGui.SetCurrentContext(Context);
+                    ImGui.SetCurrentContext(Context);
                 }
 
                 _frameBegun = false;
-                ImGuiNET.ImGui.Render();
-                RenderImDrawData(ImGuiNET.ImGui.GetDrawData());
+                ImGui.Render();
+                RenderImDrawData(ImGui.GetDrawData());
 
                 if (oldCtx != Context)
                 {
-                    ImGuiNET.ImGui.SetCurrentContext(oldCtx);
+                    ImGui.SetCurrentContext(oldCtx);
                 }
             }
         }
@@ -187,27 +188,27 @@ namespace AudioPluginGL.UI;
         /// </summary>
         public void Update(float deltaSeconds)
         {
-            var oldCtx = ImGuiNET.ImGui.GetCurrentContext();
+            var oldCtx = ImGui.GetCurrentContext();
 
             if (oldCtx != Context)
             {
-                ImGuiNET.ImGui.SetCurrentContext(Context);
+                ImGui.SetCurrentContext(Context);
             }
 
             if (_frameBegun)
             {
-                ImGuiNET.ImGui.Render();
+                ImGui.Render();
             }
 
             SetPerFrameImGuiData(deltaSeconds);
             UpdateImGuiInput();
 
             _frameBegun = true;
-            ImGuiNET.ImGui.NewFrame();
+            ImGui.NewFrame();
 
             if (oldCtx != Context)
             {
-                ImGuiNET.ImGui.SetCurrentContext(oldCtx);
+                ImGui.SetCurrentContext(oldCtx);
             }
         }
 
@@ -217,7 +218,7 @@ namespace AudioPluginGL.UI;
         /// </summary>
         private void SetPerFrameImGuiData(float deltaSeconds)
         {
-            var io = ImGuiNET.ImGui.GetIO();
+            var io = ImGui.GetIO();
             io.DisplaySize = new Vector2(_windowWidth, _windowHeight);
 
             if (_windowWidth > 0 && _windowHeight > 0)
@@ -231,7 +232,7 @@ namespace AudioPluginGL.UI;
 
         private void UpdateImGuiInput()
         {
-            var io = ImGuiNET.ImGui.GetIO();
+            var io = ImGui.GetIO();
             // TODO: make this
 
             io.MouseDown[0] = Input.IsMouseButtonDown(System.Windows.Input.MouseButton.Left);
@@ -332,16 +333,16 @@ namespace AudioPluginGL.UI;
                 Key.AltRight => ImGuiKey.RightAlt,
                 Key.SuperRight => ImGuiKey.RightSuper,
                 Key.Menu => ImGuiKey.Menu,
-                Key.Number0 => ImGuiKey._0,
-                Key.Number1 => ImGuiKey._1,
-                Key.Number2 => ImGuiKey._2,
-                Key.Number3 => ImGuiKey._3,
-                Key.Number4 => ImGuiKey._4,
-                Key.Number5 => ImGuiKey._5,
-                Key.Number6 => ImGuiKey._6,
-                Key.Number7 => ImGuiKey._7,
-                Key.Number8 => ImGuiKey._8,
-                Key.Number9 => ImGuiKey._9,
+                Key.Number0 => ImGuiKey.Key0,
+                Key.Number1 => ImGuiKey.Key1,
+                Key.Number2 => ImGuiKey.Key2,
+                Key.Number3 => ImGuiKey.Key3,
+                Key.Number4 => ImGuiKey.Key4,
+                Key.Number5 => ImGuiKey.Key5,
+                Key.Number6 => ImGuiKey.Key6,
+                Key.Number7 => ImGuiKey.Key7,
+                Key.Number8 => ImGuiKey.Key8,
+                Key.Number9 => ImGuiKey.Key9,
                 Key.A => ImGuiKey.A,
                 Key.B => ImGuiKey.B,
                 Key.C => ImGuiKey.C,
@@ -503,7 +504,7 @@ namespace AudioPluginGL.UI;
             // Render command lists
             for (int n = 0; n < drawDataPtr.CmdListsCount; n++)
             {
-                ImDrawListPtr cmdListPtr = drawDataPtr.CmdLists[n];
+                ImDrawListPtr cmdListPtr = drawDataPtr.CmdLists.Data[n];
 
                 // Upload vertex/index buffers
 
@@ -514,19 +515,19 @@ namespace AudioPluginGL.UI;
 
                 for (int cmd_i = 0; cmd_i < cmdListPtr.CmdBuffer.Size; cmd_i++)
                 {
-                    ImDrawCmdPtr cmdPtr = cmdListPtr.CmdBuffer[cmd_i];
+                    ImDrawCmd cmd = cmdListPtr.CmdBuffer.Data[cmd_i];
 
-                    if (cmdPtr.UserCallback != IntPtr.Zero)
+                    if (cmd.UserCallback != (void*)0)
                     {
                         throw new NotImplementedException();
                     }
                     else
                     {
                         Vector4 clipRect;
-                        clipRect.X = (cmdPtr.ClipRect.X - clipOff.X) * clipScale.X;
-                        clipRect.Y = (cmdPtr.ClipRect.Y - clipOff.Y) * clipScale.Y;
-                        clipRect.Z = (cmdPtr.ClipRect.Z - clipOff.X) * clipScale.X;
-                        clipRect.W = (cmdPtr.ClipRect.W - clipOff.Y) * clipScale.Y;
+                        clipRect.X = (cmd.ClipRect.X - clipOff.X) * clipScale.X;
+                        clipRect.Y = (cmd.ClipRect.Y - clipOff.Y) * clipScale.Y;
+                        clipRect.Z = (cmd.ClipRect.Z - clipOff.X) * clipScale.X;
+                        clipRect.W = (cmd.ClipRect.W - clipOff.Y) * clipScale.Y;
 
                         if (clipRect.X < framebufferWidth && clipRect.Y < framebufferHeight && clipRect.Z >= 0.0f && clipRect.W >= 0.0f)
                         {
@@ -535,10 +536,10 @@ namespace AudioPluginGL.UI;
                             _gl.CheckGlError("Scissor");
 
                             // Bind texture, Draw
-                            _gl.BindTexture(GLEnum.Texture2D, (uint) cmdPtr.TextureId);
+                            _gl.BindTexture(GLEnum.Texture2D, (uint) cmd.TextureId.Handle);
                             _gl.CheckGlError("Texture");
 
-                            _gl.DrawElementsBaseVertex(GLEnum.Triangles, cmdPtr.ElemCount, GLEnum.UnsignedShort, (void*) (cmdPtr.IdxOffset * sizeof(ushort)), (int) cmdPtr.VtxOffset);
+                            _gl.DrawElementsBaseVertex(GLEnum.Triangles, cmd.ElemCount, GLEnum.UnsignedShort, (void*) (cmd.IdxOffset * sizeof(ushort)), (int) cmd.VtxOffset);
                             _gl.CheckGlError("Draw");
                         }
                     }
@@ -746,13 +747,16 @@ namespace AudioPluginGL.UI;
         private unsafe void RecreateFontDeviceTexture()
         {
             // Build texture atlas
-            var io = ImGuiNET.ImGui.GetIO();
-            io.Fonts.GetTexDataAsRGBA32(out IntPtr pixels, out int width, out int height, out int bytesPerPixel);   // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
-
+            var io = ImGui.GetIO();
+            byte* pixels;
+            int width, height, bytesPerPixel;
+            
+            io.Fonts.GetTexDataAsRGBA32(&pixels, &width, &height, &bytesPerPixel);
+            
             // Upload texture to graphics system
             _gl.GetInteger(GLEnum.TextureBinding2D, out int lastTexture);
 
-            _fontTexture = new Texture(_gl, width, height, pixels);
+            _fontTexture = new Texture(_gl, width, height, new IntPtr(pixels));
             _fontTexture.Bind();
             _fontTexture.SetMagFilter(TextureMagFilter.Linear);
             _fontTexture.SetMinFilter(TextureMinFilter.Linear);
@@ -779,7 +783,7 @@ namespace AudioPluginGL.UI;
             _fontTexture.Dispose();
             _shader.Dispose();
 
-            ImGuiNET.ImGui.DestroyContext(Context);
+            ImGui.DestroyContext(Context);
         }
     }
     public readonly struct ImGuiFontConfig
