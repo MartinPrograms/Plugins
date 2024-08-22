@@ -58,7 +58,6 @@ public class FractionalDelayLine
 
     public bool Flange = false;
     public double FlangeDepth = 0.0;
-    public bool UseSweepWidthAsBufferLength = false;
     public int SweepWidth = 0; // in samples
 
     public double ProcessSample(double sample)
@@ -67,20 +66,6 @@ public class FractionalDelayLine
 
         // Here, we assume _fractionalDelay is a small value that scales to a shorter delay time
         double dpr = Mod(dpw - (_fractionalDelay * Plugin.Instance.SampleRate) + _buffer.Length - 3, _buffer.Length);
-        if (UseSweepWidthAsBufferLength)
-        {
-            // we substitute the buffer length with the sweep width
-            if (SweepWidth < 1)
-            {
-                SweepWidth = 1;
-            }
-            
-            if (SweepWidth > _buffer.Length)
-            {
-                SweepWidth = _buffer.Length;
-            }
-            dpr = Mod(dpw - (_fractionalDelay * Plugin.Instance.SampleRate) + SweepWidth - 3, SweepWidth);
-        }
 
         // Interpolation
         double readIndex = Math.Floor(dpr);
@@ -91,6 +76,9 @@ public class FractionalDelayLine
             output = AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, _buffer.Length)], frac);
         else
             output = sample + FlangeDepth * AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, _buffer.Length)], frac);
+        
+        if (Flange)
+            FeedbackValue = output; // do the thing
         
         if (WriteFeedback)
         {

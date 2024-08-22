@@ -14,10 +14,10 @@ public class Flanger : ISampleProcessor
     public Flanger(LFO lfo)
     {
         Lfo = lfo;
-        _delayLine = new FractionalDelayLine(AudioSample.SecondsToSamples(0.0f, Plugin.Instance.SampleRate), 1, 0, false, false, AudioSample.SecondsToSamples(2.0f, Plugin.Instance.SampleRate));
+        _delayLine = new FractionalDelayLine(AudioSample.SecondsToSamples(0.0f, Plugin.Instance.SampleRate), 1, 0, true, true, AudioSample.SecondsToSamples(0.03f, Plugin.Instance.SampleRate));
         _delayLine.Flange = true;
         _delayLine.FlangeDepth = 0.5;
-        _delayLine.UseSweepWidthAsBufferLength = true;
+        _delayLine.FeedbackGain = 0.5;
     }
 
     public double ProcessSample(double sample)
