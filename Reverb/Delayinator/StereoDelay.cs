@@ -14,7 +14,13 @@ public class StereoDelay : StereoAudioUnit
         LeftDelay = new Delay(settings.Clone());
         RightDelay = new Delay(LeftDelay.Settings); // Don't clone, because we want to sync settings
     }
-    
+
+    public StereoDelay() : base("Stereo Delay")
+    {
+        _settings = new DelaySettings();
+        LeftDelay = new Delay(_settings.Clone());
+        RightDelay = new Delay(_settings.Clone());
+    }
     public override double[] ProcessStereoSample(double[] samples)
     {
         if (!Enabled)

@@ -75,7 +75,7 @@ public class DelaySettings
     
     public DelaySettings()
     {
-        Delay = 0.5f;
+        Delay = 1.0f;
         Feedback = 0.5f;
         WetLevel = 0.5f;
         DryLevel = 0.5f;
@@ -85,4 +85,6 @@ public class DelaySettings
     {
         return new DelaySettings(Delay, Feedback, WetLevel, DryLevel);
     }
+    
+    public static DelaySettings Default => new DelaySettings();
 }

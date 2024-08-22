@@ -1,6 +1,8 @@
 ﻿using AudioPluginGL.MathHelpers;
 using AudioPluginGL.UI;
+using AudioPlugSharp;
 using Hexa.NET.ImGui;
+using Microsoft.VisualBasic.Devices;
 using Reverb.AudioEffectsTIA.Delays.Effects;
 
 namespace Reverb.AudioEffectsTIA.AudioUnits;
@@ -22,14 +24,15 @@ public class StereoVibrato : StereoAudioUnit
         {
             return samples;
         }
+
         try
         {
             LeftVibrato.Lfo.SetBpm(Plugin.Instance.BPM);
             RightVibrato.Lfo.SetBpm(Plugin.Instance.BPM);
-            var output = new double[] { LeftVibrato.ProcessSample(samples[0]), RightVibrato.ProcessSample(samples[1]) };
+            var output = new double[]
+                { LeftVibrato.ProcessSample(samples[0]), RightVibrato.ProcessSample(samples[1]) };
             return output;
-        }
-        catch (Exception e)
+        }catch (Exception e)
         {
             Console.WriteLine(e);
             return samples;
@@ -38,8 +41,8 @@ public class StereoVibrato : StereoAudioUnit
 
     private LFO _lfo = new LFO(8.5f, 0.012f, 0, LFOShape.Sine, 0, 130, 44100);
     private bool _advancedMode;
-    private float _depth; // This controls amplitude of the LFO
-    private float _rate; // This controls frequency of the LFO (sine)
+    private float _depth = 0.012f / 100; // This controls amplitude of the LFO
+    private float _rate = AudioSample.SecondsToHz(8.5f);
 
     public override void DrawUserInterface()
     {
@@ -56,8 +59,9 @@ public class StereoVibrato : StereoAudioUnit
         }
         else
         {
-            bool changed = ImGui.SliderFloat("Depth##" + GetHashCode(), ref _depth, 0.0f, 1.0f); // amplitude: from 0 to 1, later divided by 100 so it does not become too aggressive
-            changed |= ImGui.SliderFloat("Rate##" + GetHashCode(), ref _rate, 0.2f, 20.0f);
+            bool changedD = ImGui.SliderFloat("Depth##" + GetHashCode(), ref _depth, 0.0f, 1.0f); // amplitude: from 0 to 1, later divided by 100 so it does not become too aggressive
+            bool changedR = ImGui.SliderFloat("Rate##" + GetHashCode(), ref _rate, 0.2f, 20.0f);
+            bool changed = changedD || changedR;
             if (changed)
             {
                 _lfo = new LFO(AudioSample.HzToSeconds(_rate), _depth / 100, 0, LFOShape.Sine, 0, Plugin.Instance.BPM, Plugin.Instance.SampleRate);
@@ -79,13 +83,6 @@ public class StereoVibrato : StereoAudioUnit
             {
                 ImGui.OpenPopup("Help##"+GetHashCode());
             }
-            
-            
         }
-    }
-    
-    private void UpdateLfo()
-    {
-        
     }
 }

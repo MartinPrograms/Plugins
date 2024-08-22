@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Reflection;
+using System.Runtime.InteropServices;
 using AudioPluginGL.MathHelpers;
 using AudioPluginGL.UI;
 using AudioPlugSharp;
@@ -40,7 +41,7 @@ public class Plugin : AudioPluginOpenGL
     private List<StereoAudioUnit> _audioUnits = new List<StereoAudioUnit>();
 
     private DelaySettings _settings = new DelaySettings();
-    
+
     public override void Initialize()
     {
         base.Initialize();
@@ -53,6 +54,7 @@ public class Plugin : AudioPluginOpenGL
         {
             SampleRate = 44100; // nasty bug workaround :(
         }
+
         Console.WriteLine("Sample rate: " + SampleRate);
 
         BPM = (float)Host.BPM;
@@ -61,16 +63,31 @@ public class Plugin : AudioPluginOpenGL
         {
             BPM = 120; // nasty bug workaround :(
         }
+
+        InputPorts = new AudioIOPort[]
+            { stereoInput = new AudioIOPort("Stereo Input", EAudioChannelConfiguration.Stereo) };
+        OutputPorts = new AudioIOPort[]
+            { stereoOutput = new AudioIOPort("Stereo Output", EAudioChannelConfiguration.Stereo) };
+
+        // get all the types in the assembly
+        var types = Assembly.GetExecutingAssembly().GetTypes();
         
-        InputPorts = new AudioIOPort[] { stereoInput = new AudioIOPort("Stereo Input", EAudioChannelConfiguration.Stereo) };
-        OutputPorts = new AudioIOPort[] { stereoOutput = new AudioIOPort("Stereo Output", EAudioChannelConfiguration.Stereo) };
-        
-        //_audioUnits.Add(new StereoDelay(_settings));
-        _audioUnits.Add(new StereoVibrato());
+        // find all the types that inherit from StereoAudioUnit
+        foreach (var type in types)
+        {
+            if (type.IsSubclassOf(typeof(StereoAudioUnit)))
+            {
+                var audioUnit = (StereoAudioUnit)Activator.CreateInstance(type);
+                audioUnit.Enabled = false;
+                _audioUnits.Add(audioUnit);
+            }
+        }
     }
 
     private double[] _debugSamples = new double[64];
     private int _debugIndex;
+
+    public int CurrentOffset { get; private set; }
 
     public override void Process()
     {
@@ -107,6 +124,8 @@ public class Plugin : AudioPluginOpenGL
                 samples[0] = (inSamplesL[i]);
                 samples[1] = (inSamplesR[i]);
                 
+                CurrentOffset = i;
+                
                 // Process the samples
                 foreach (var audioUnit in _audioUnits)
                 {
@@ -125,7 +144,12 @@ public class Plugin : AudioPluginOpenGL
 
     public override void RenderUI(float dt)
     {
-        ImGui.Text("Martin's exquisite reverberation engine 9000");
+        ImGui.Text("Martin's exquisite effects extravaganza 9000!");
+        ImGui.SameLine();
+        if (ImGui.Button("Website"))
+        {
+            System.Diagnostics.Process.Start("https://martiiin.net");
+        }
         if (ImGui.Button("Dump Logs"))
         {
             Console.WriteLine("DUMPING!!!");
@@ -156,7 +180,9 @@ public class Plugin : AudioPluginOpenGL
         
         foreach (var audioUnit in _audioUnits)
         {
-            audioUnit.DrawUserInterface();
+            if (ImGui.CollapsingHeader(audioUnit.Name+"##"+audioUnit.GetHashCode()))
+                audioUnit.DrawUserInterface();
+            ImGui.Separator();
         }
     }
 

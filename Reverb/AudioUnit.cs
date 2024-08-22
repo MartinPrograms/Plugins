@@ -36,6 +36,21 @@ public abstract class StereoAudioUnit : IStereoSampleProcessor
     {
         ImGui.Text(Name);
         ImGui.Text(Description);
-        ImGui.Checkbox("Enabled (!bypass)", ref Enabled);
+        ImGui.Checkbox("Enabled (!bypass)##"+Name.GetHashCode(), ref Enabled);
+    }
+    
+    public virtual void CreateParameters()
+    {
+        // Override this method to create parameters
+    }
+    
+    public virtual void LoadSaveParameters()
+    {
+        // Override this method to load and save parameters
+    }
+    
+    public virtual void UpdateParameters()
+    {
+        // Override this method to update parameters
     }
 }

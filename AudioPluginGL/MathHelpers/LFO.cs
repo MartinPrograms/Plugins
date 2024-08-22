@@ -1,4 +1,6 @@
-﻿namespace AudioPluginGL.MathHelpers;
+﻿using AudioPlugSharp;
+
+namespace AudioPluginGL.MathHelpers;
 
 public class LFO : ICloneable
 {
@@ -192,6 +194,63 @@ public class LFO : ICloneable
         {
             return new LFO(Frequency, Amplitude, Offset, Shape, Phase, 130, 44100);
         }
+    }
+
+    public IEnumerable<AudioPluginParameter> GetParameters(string prefix)
+    {
+        List<AudioPluginParameter> parameters = new List<AudioPluginParameter>();
+        
+        parameters.Add(new AudioPluginParameter()
+        {
+            ID = prefix + "_Frequency".ToLower(),
+            Name = "Frequency",
+            MinValue = 0.0f,
+            MaxValue = 20.0f,
+            DefaultValue = Frequency,
+            ValueFormat = "0.00"
+        });
+        
+        parameters.Add(new AudioPluginParameter()
+        {
+            ID = prefix + "_Amplitude".ToLower(),
+            Name = "Amplitude",
+            MinValue = 0.0f,
+            MaxValue = 1.0f,
+            DefaultValue = Amplitude,
+            ValueFormat = "0.00"
+        });
+        
+        parameters.Add(new AudioPluginParameter()
+        {
+            ID = prefix + "_Offset".ToLower(),
+            Name = "Offset",
+            MinValue = -1.0f,
+            MaxValue = 1.0f,
+            DefaultValue = Offset,
+            ValueFormat = "0.00"
+        });
+        
+        parameters.Add(new AudioPluginParameter()
+        {
+            ID = prefix + "_Shape".ToLower(),
+            Name = "Shape",
+            MinValue = 0.0f,
+            MaxValue = 4.0f,
+            DefaultValue = (float) Shape,
+            ValueFormat = "0.00"
+        });
+        
+        parameters.Add(new AudioPluginParameter()
+        {
+            ID = prefix + "_Phase".ToLower(),
+            Name = "Phase",
+            MinValue = 0.0f,
+            MaxValue = 1.0f,
+            DefaultValue = Phase,
+            ValueFormat = "0.00"
+        });
+        
+        return parameters;
     }
 }
 
