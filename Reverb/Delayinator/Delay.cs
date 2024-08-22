@@ -78,7 +78,7 @@ public class DelaySettings
         Delay = 1.0f;
         Feedback = 0.5f;
         WetLevel = 0.5f;
-        DryLevel = 0.5f;
+        DryLevel = 1.0f;
     }
 
     public DelaySettings Clone()

@@ -208,4 +208,21 @@ public static class ExtImGui
             // That is a lot of buttons, but it's a lot of fun to play with :) (especially the randomize button :D)
         }
     }
+
+    public static void PlotSamples(string id, double[] debugSamples, int len)
+    {
+        // Implot
+        if (ImPlot.BeginSubplots(id, 1,1, new Vector2(200, 100), ImPlotSubplotFlags.NoResize | ImPlotSubplotFlags.NoTitle))
+        {
+            ImPlot.SetNextAxisLimits(ImAxis.Y1, -1, 1);
+            ImPlot.SetNextAxisLimits(ImAxis.X1, 0, len);
+            if (ImPlot.BeginPlot("", ImPlotFlags.NoLegend)){
+                ImPlot.SetupAxis(ImAxis.X1, ImPlotAxisFlags.NoDecorations); // get rid of the x axis (too many numbers, looks really bad)
+                ImPlot.SetupAxis(ImAxis.Y1, "Intensity", ImPlotAxisFlags.None);
+                ImPlot.PlotLine("LFO", ref debugSamples[0], len-1);
+                ImPlot.EndPlot();
+            }
+        }
+
+    }
 }

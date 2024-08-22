@@ -11,7 +11,7 @@ public class StereoTremolo : StereoAudioUnit
     public Tremolo RightTremolo;
     private LFO _lfo = new LFO(8.5f, 0.012f, 0, LFOShape.Sine, 0, 130, 44100);
 
-    public StereoTremolo() : base("Stereo Tremolo")
+    public StereoTremolo() : base("Stereo Tremolo", "A tremolo! A tremolo modulates the amplitude of the signal by a low-frequency oscillator (LFO). This LFO then creates a pulsating effect.")
     {
         LeftTremolo = new Tremolo(_lfo);
         RightTremolo = new Tremolo(_lfo);

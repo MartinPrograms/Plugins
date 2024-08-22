@@ -59,6 +59,7 @@ public class LFO : ICloneable
         {
             _phaseIndex = 0;
         }
+        
     }
     
     private double GetValue(double phase)

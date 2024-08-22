@@ -80,4 +80,30 @@ public static class AudioSample
     {
         return 1.0f / hz;
     }
+
+    public static float ValueFromPercentage(float maxOscAmplitude, float amp)
+    {
+        return maxOscAmplitude * amp;
+    }
+    
+    public static double ValueFromPercentage(double maxOscAmplitude, double amp)
+    {
+        return maxOscAmplitude * amp;
+    }
+
+    public static float FullRotationToDegrees(float phase)
+    {
+        return (float) (phase * 360);
+    }
+
+    public static float DegreesToFullRotation(float degPhase)
+    {
+        return degPhase / 360;
+    }
+
+    // A is the number to round up, B is the number to round up to
+    public static int RoundUp(int a, int b)
+    {
+        return (int) Math.Ceiling((double) a / b) * b;
+    }
 }

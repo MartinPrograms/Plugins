@@ -24,10 +24,12 @@ public abstract class StereoAudioUnit : IStereoSampleProcessor
     public bool Enabled = true;
     public readonly string Name = "Stereo Audio Unit";
     public readonly string Description = "Base Class Stereo Audio Unit";
-
-    public StereoAudioUnit(string name)
+    public readonly string Help = "No help available.";
+    public StereoAudioUnit(string name, string description = "A stereo audio unit", string help = "No help available.")
     {
         Name = name;
+        Description = description;
+        Help = help;
     }
 
     public abstract double[] ProcessStereoSample(double[] samples);
@@ -35,6 +37,19 @@ public abstract class StereoAudioUnit : IStereoSampleProcessor
     public virtual void DrawUserInterface()
     {
         ImGui.Text(Name);
+        ImGui.SameLine();
+        
+        if (ImGui.BeginPopup("Help##"+Name.GetHashCode()))
+        {
+            ImGui.Text(Help);
+            ImGui.EndPopup();
+        }
+        
+        if (ImGui.Button("Help##"+Name.GetHashCode()))
+        {
+            ImGui.OpenPopup("Help##"+Name.GetHashCode());
+        }
+        
         ImGui.Text(Description);
         ImGui.Checkbox("Enabled (!bypass)##"+Name.GetHashCode(), ref Enabled);
     }

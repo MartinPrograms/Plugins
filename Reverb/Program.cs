@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using AudioPluginGL.MathHelpers;
 using AudioPluginGL.UI;
@@ -38,6 +39,7 @@ public class Plugin : AudioPluginOpenGL
     private AudioIOPort stereoInput;
     private AudioIOPort stereoOutput;
 
+    private List<StereoAudioUnit> _availableAudioUnits = new List<StereoAudioUnit>();
     private List<StereoAudioUnit> _audioUnits = new List<StereoAudioUnit>();
 
     private DelaySettings _settings = new DelaySettings();
@@ -79,13 +81,10 @@ public class Plugin : AudioPluginOpenGL
             {
                 var audioUnit = (StereoAudioUnit)Activator.CreateInstance(type);
                 audioUnit.Enabled = false;
-                _audioUnits.Add(audioUnit);
+                _availableAudioUnits.Add(audioUnit);
             }
         }
     }
-
-    private double[] _debugSamples = new double[64];
-    private int _debugIndex;
 
     public int CurrentOffset { get; private set; }
 
@@ -102,7 +101,7 @@ public class Plugin : AudioPluginOpenGL
         
         if (BPM == 0)
         {
-            BPM = 120; // nasty bug workaround :(
+            BPM = 120; // nasty bug workaround :( (AudioPlugSharp does not provide bpm at the start)
         }
         
         ReadOnlySpan<double> inSamplesR = stereoInput.GetAudioBuffer(1);
@@ -131,7 +130,7 @@ public class Plugin : AudioPluginOpenGL
                 {
                     samples = audioUnit.ProcessStereoSample(samples);
 
-                }
+                } 
 
                 outLeftSamples[i] = samples[0];
                 outRightSamples[i] = samples[1];
@@ -148,8 +147,23 @@ public class Plugin : AudioPluginOpenGL
         ImGui.SameLine();
         if (ImGui.Button("Website"))
         {
-            System.Diagnostics.Process.Start("https://martiiin.net");
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                Arguments = "start https://martiiin.net"
+            };
+            try
+            {
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
+
         if (ImGui.Button("Dump Logs"))
         {
             Console.WriteLine("DUMPING!!!");
@@ -157,40 +171,101 @@ public class Plugin : AudioPluginOpenGL
             {
                 Console.WriteLine(log.Format());
             }
-            
-            // Output the debug samples
-            Console.WriteLine("Debug samples:");
-            foreach (var sample in _debugSamples)
-            {
-                Console.Write(sample);
-            }
+
             Console.WriteLine();
-            
+
             Console.WriteLine("BPM: " + BPM);
             Console.WriteLine("Sample rate: " + SampleRate);
-            
+
             Console.WriteLine("Audio units:");
             foreach (var audioUnit in _audioUnits)
             {
                 Console.WriteLine(audioUnit.Name);
             }
         }
-        
+
         ImGui.Separator();
-        
+
+        ImGui.Text("Audio Units:");
+        // List all the available audio units
+        foreach (var audioUnit in _availableAudioUnits)
+        {
+            if (ImGui.Button("Add " + audioUnit.Name))
+            {
+                // Clone the audio unit
+                var newAudioUnit = (StereoAudioUnit)Activator.CreateInstance(audioUnit.GetType());
+                _audioUnits.Add(newAudioUnit);
+            }
+
+            ImGui.SameLine();
+        }
+        ImGui.NewLine(); // to counter the SameLine above
+        ImGui.Separator();
+
+        List<StereoAudioUnit>
+            updatedAudioUnits = new List<StereoAudioUnit>(); // because we can't modify the list while iterating
+        updatedAudioUnits.AddRange(_audioUnits);
+
         foreach (var audioUnit in _audioUnits)
         {
-            if (ImGui.CollapsingHeader(audioUnit.Name+"##"+audioUnit.GetHashCode()))
+            var header = ImGui.CollapsingHeader(audioUnit.Name + "##" + audioUnit.GetHashCode(),
+                ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.Framed);
+            try
+            {
+                ImGui.SameLine();
+                if (ImGui.Button(audioUnit.Enabled
+                        ? "Bypass##" + audioUnit.GetHashCode()
+                        : "Enable##" + audioUnit.GetHashCode()))
+                {
+                    audioUnit.Enabled = !audioUnit.Enabled;
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("Up##" + audioUnit.GetHashCode()))
+                {
+                    // Moves the audio unit up in the list
+                    int index = _audioUnits.IndexOf(audioUnit);
+                    if (index > 0)
+                    {
+                        updatedAudioUnits.RemoveAt(index);
+                        updatedAudioUnits.Insert(index - 1, audioUnit);
+                    }
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("Down##" + audioUnit.GetHashCode()))
+                {
+                    // Moves the audio unit down in the list
+                    int index = _audioUnits.IndexOf(audioUnit);
+                    if (index < _audioUnits.Count - 1)
+                    {
+                        updatedAudioUnits.RemoveAt(index);
+                        updatedAudioUnits.Insert(index + 1, audioUnit);
+                    }
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("Remove##" + audioUnit.GetHashCode()))
+                {
+                    updatedAudioUnits.Remove(audioUnit);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            if (header)
                 audioUnit.DrawUserInterface();
             ImGui.Separator();
         }
+        _audioUnits = updatedAudioUnits;
     }
 
     [STAThread]
     public static void Main(string[] args)
     {
-        Console.WriteLine("Why the FUCK are you running this exe?");
-
+        Console.WriteLine("Probably does not work, because of ASIO stuff...");
         WindowsFormsHost<Plugin> host = new WindowsFormsHost<Plugin>(new Plugin());
         host.Run();
     }

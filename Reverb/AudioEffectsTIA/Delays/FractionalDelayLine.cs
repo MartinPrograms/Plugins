@@ -59,23 +59,28 @@ public class FractionalDelayLine
     public bool Flange = false;
     public double FlangeDepth = 0.0;
     public int SweepWidth = 0; // in samples
-
+    public bool UseSweepWidthAsBufferLength = false;
     public double ProcessSample(double sample)
     {
         double dpw = _writeIndex;
-
+        int bufferLength = _buffer.Length;
+        if (UseSweepWidthAsBufferLength)
+        {
+            bufferLength = SweepWidth;
+        }
         // Here, we assume _fractionalDelay is a small value that scales to a shorter delay time
-        double dpr = Mod(dpw - (_fractionalDelay * Plugin.Instance.SampleRate) + _buffer.Length - 3, _buffer.Length);
+        double dpr = Mod(dpw - (_fractionalDelay * Plugin.Instance.SampleRate) + bufferLength - 3, bufferLength);
 
         // Interpolation
         double readIndex = Math.Floor(dpr);
         double frac = dpr - readIndex;
 
         double output = 0;
+   
         if (!Flange)
-            output = AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, _buffer.Length)], frac);
+            output = AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, bufferLength)], frac);
         else
-            output = sample + FlangeDepth * AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, _buffer.Length)], frac);
+            output = sample + FlangeDepth * AudioSample.Mix(_buffer[(int)readIndex], _buffer[(int)Mod(readIndex + 1, bufferLength)], frac);
         
         if (Flange)
             FeedbackValue = output; // do the thing
@@ -97,12 +102,12 @@ public class FractionalDelayLine
         _writeIndex++;
         _readIndex++;
 
-        if (_writeIndex >= _buffer.Length)
+        if (_writeIndex >= bufferLength)
         {
             _writeIndex = 0;
         }
 
-        if (_readIndex >= _buffer.Length)
+        if (_readIndex >= bufferLength)
         {
             _readIndex = 0;
         }
@@ -112,5 +117,8 @@ public class FractionalDelayLine
     }
 
 
-
+    public int GetBufferLength()
+    {
+        return _buffer.Length;
+    }
 }

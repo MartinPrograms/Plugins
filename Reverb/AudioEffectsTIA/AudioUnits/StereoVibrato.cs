@@ -12,7 +12,7 @@ public class StereoVibrato : StereoAudioUnit
     public Vibrato LeftVibrato;
     public Vibrato RightVibrato;
     
-    public StereoVibrato() : base("Stereo Vibrato")
+    public StereoVibrato() : base("Stereo Vibrato", "A vibrato! A vibrato modulates the pitch of the signal by a low-frequency oscillator (LFO). This LFO then creates a pitch-shifting effect.")
     {
         LeftVibrato = new Vibrato(_lfo);
         RightVibrato = new Vibrato(_lfo);
